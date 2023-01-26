@@ -1,3 +1,7 @@
+import {
+  ArticlesPagination,
+  ArticlesPaginationArgs,
+} from './dto/articles-pagination.dto';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -11,6 +15,7 @@ import {
   ArticleUpdateOutput,
 } from './dto/article-update.dto';
 import { Article } from './models/article.model';
+import { SortDirection } from 'src/pagination/dto/pagination.dto';
 
 @Injectable()
 export class ArticleService {
@@ -49,7 +54,34 @@ export class ArticleService {
     return { articleId };
   }
 
-  async articlesList(): Promise<Article[]> {
-    return this.articleRepository.find();
+  async articlesPagination(
+    args: ArticlesPaginationArgs,
+  ): Promise<ArticlesPagination> {
+    const queryBuilder = this.articleRepository.createQueryBuilder('article');
+    queryBuilder.take(args.take);
+    queryBuilder.skip(args.skip);
+    if (args.sortBy) {
+      if (args.sortBy.createAt !== null) {
+        queryBuilder.addOrderBy(
+          'article.createdAt',
+          args.sortBy.createAt === SortDirection.ASC ? 'ASC' : 'DESC',
+        );
+      }
+      if (args.sortBy.title !== null) {
+        queryBuilder.addOrderBy(
+          'article.createdAt',
+          args.sortBy.title === SortDirection.ASC ? 'ASC' : 'DESC',
+        );
+      }
+    }
+    const [nodes, totalCount] = await queryBuilder.getManyAndCount();
+    // const [nodes, totalCount] = await this.articleRepository.findAndCount({
+    //   skip: args.skip,
+    //   take: args.take,
+    //   order: {
+    //     createdAt: args.sortBy?.createAt === SortDirection.ASC ? 'ASC' : 'DESC',
+    //   },
+    // });
+    return { nodes, totalCount };
   }
 }
